@@ -4,7 +4,7 @@ from flask import jsonify
 from be.model import user
 
 bp_auth = Blueprint("auth", __name__, url_prefix="/auth")
-
+# 定义 auth 蓝图，所以相关接口前缀为 /auth
 
 @bp_auth.route("/login", methods=["POST"])
 def login():
