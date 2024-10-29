@@ -73,8 +73,53 @@ self.conn['store'].update_one(
 卖家增加库存函数对应test_add_stock_level文件，test_ok测试接口基本功能，test_error_non_exist_store_id、test_error_exist_book_id和test_error_non_exist_user_id分别用于测试店铺、书籍、卖家不存在时系统是否报错。
 
 
+## 额外功能
 
+### 发货功能
+基于特定的商店ID（store_id）和订单ID（order_id）来检查订单状态，并更新订单为“已发货”状态。
+检查store_id是否存在以及order_id是否存在于history_order
+```python
+if not self.db['store'].find_one({'store_id': store_id}):
+    return error.error_non_exist_store_id(store_id)
+if not self.db['history_order'].find_one({'order_id': order_id}):
+    return error.error_invalid_order_id(order_id)
+```
 
+查询order的具体信息，如果order的状态不是2，则发生错误，如果是2，则更新为3，表示已发货
+```python
+order = self.db['history_order'].find_one({'order_id': order_id})
+if order["status"] != 2:
+    return 500, "Invalid order status"
+
+self.db["history_order"].update_one({"order_id": order_id}, {"$set": {"status": 3}})
+```
+#### 发货功能后端接口
+用POST
+```python
+# 发货
+@bp_seller.route("/send_books", methods=["POST"])
+def send_books():
+    store_id: str = request.json.get("store_id")
+    order_id: str = request.json.get("order_id")
+
+    s = seller.Seller()
+    code, message = s.send_books(store_id, order_id)
+
+    return jsonify({"message": message}), code
+```
+#### 发货功能构造请求
+```python
+def send_books(
+    self, store_id: str, order_id: str) -> int:
+    json = {
+        "store_id": store_id,
+        "order_id": order_id
+    }
+    url = urljoin(self.url_prefix, "send_books")
+    headers = {"token": self.token}
+    r = requests.post(url, headers=headers, json=json)
+    return r.status_code
+```
 
 ## 亮点
 

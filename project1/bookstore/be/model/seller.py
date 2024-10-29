@@ -1,6 +1,7 @@
 from be.model import error
 from be.model import db_conn
 import pymongo
+import logging
 
 class Seller(db_conn.DBConn):
     def __init__(self):
@@ -96,4 +97,27 @@ class Seller(db_conn.DBConn):
             return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
+        return 200, "ok"
+    
+
+    # 发货
+    def send_books(self, store_id: str, order_id: str) -> (int, str):
+        try:
+            if not self.db['store'].find_one({'store_id': store_id}):
+                return error.error_non_exist_store_id(store_id)
+            if not self.db['history_order'].find_one({'order_id': order_id}):
+                return error.error_invalid_order_id(order_id)
+
+            order = self.db['history_order'].find_one({'order_id': order_id})
+
+            if order["status"] != 2:
+                return 500, "Invalid order status"
+
+            self.db["history_order"].update_one({"order_id": order_id}, {"$set": {"status": 3}})
+
+
+        except Exception as e:
+            logging.info("Error: {}".format(str(e)))
+            return 500, "Internal Server Error"
+
         return 200, "ok"
