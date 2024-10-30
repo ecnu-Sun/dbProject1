@@ -97,3 +97,27 @@ class Seller(db_conn.DBConn):
         except Exception as e:
             return 530, f"{str(e)}"
         return 200, "ok"
+
+    def ship_order(self, user_id: str, store_id: str, order_id: str) -> (int, str):
+        try:
+            # 检查用户、书店和订单是否存在
+            if not self.user_id_exist(user_id):
+                return error.error_non_exist_user_id(user_id)
+            if not self.store_id_exist(store_id):
+                return error.error_non_exist_store_id(store_id)
+            if not self.order_id_exist(order_id):  # 假设有 order_id_exist 方法来检查订单
+                return error.error_non_exist_order_id(order_id)
+
+            # 更新订单状态为“已发货”
+            update_result = self.conn["orders"].update_one(
+                {"order_id": order_id, "store_id": store_id, "user_id": user_id},
+                {"$set": {"status": "shipped"}}
+            )
+            if update_result.matched_count == 0:
+                return error.error_non_exist_order_id(order_id)
+        except PyMongoError as e:
+            logging.error(f"Database error in ship_order: {e}", exc_info=True)
+            return 528, f"{str(e)}"
+        except Exception as e:
+            return 530, f"{str(e)}"
+        return 200, "Order shipped successfully"
