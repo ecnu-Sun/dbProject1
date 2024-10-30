@@ -54,3 +54,16 @@ def ship_order():
     code, message = s.ship_order(user_id, store_id, order_id)
 
     return jsonify({"message": message}), code
+
+
+
+# 发货
+@bp_seller.route("/send_books", methods=["POST"])
+def send_books():
+    store_id: str = request.json.get("store_id")
+    order_id: str = request.json.get("order_id")
+
+    s = seller.Seller()
+    code, message = s.send_books(store_id, order_id)
+
+    return jsonify({"message": message}), code

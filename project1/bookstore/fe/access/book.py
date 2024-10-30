@@ -30,7 +30,7 @@ class BookDB:
     def __init__(self, large: bool = False):
         self.client = MongoClient("mongodb://localhost:27017")
         self.db = self.client["bookstore"]
-        self.collection = self.db["book"]  # 使用 book 集合来存储和查询图书信息
+        self.collection = self.db["books"]  # 使用 book 集合来存储和查询图书信息
 
     # 获取图书数量
     def get_book_count(self):
@@ -47,7 +47,7 @@ class BookDB:
             book = Book()
 
             # 将查询结果映射到 Book 对象
-            book.id = document.get("book_id")
+            book.id = document.get("id")
             book.title = document.get("title")
             book.author = document.get("author")
             book.publisher = document.get("publisher")

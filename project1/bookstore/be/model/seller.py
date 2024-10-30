@@ -2,7 +2,7 @@ import json
 from be.model import error
 from be.model import db_conn
 from pymongo.errors import PyMongoError
-
+import logging
 class Seller(db_conn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
@@ -29,9 +29,11 @@ class Seller(db_conn.DBConn):
                     "book_id": book_id,
                     "book_info": book_info,
                     "stock_level": stock_level
-                }}}
+                }}},
+                upsert=True  # 如果不存在则创建新文档
             )
         except PyMongoError as e:
+            logging.error(f"Database error in add_book: {e}", exc_info=True)
             return 528, f"{str(e)}"
         except Exception as e:
             return 530, f"{str(e)}"

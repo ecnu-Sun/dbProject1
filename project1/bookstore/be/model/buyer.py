@@ -25,8 +25,13 @@ class Buyer(db_conn.DBConn):
             items = []  # 存储订单详情
             total_price = 0
 
+
             # 对每本书判定该书店是否有这本书，并获取库存、价格
             for book_id, count in id_and_count:
+                #先检查书籍是否存在
+                if not self.book_id_exist(store_id,book_id):
+                    return error.error_non_exist_book_id(store_id)+(order_id,)
+                
                 book = self.conn["store"].find_one({"store_id": store_id, "books.book_id": book_id}, 
                                                     {"books.$": 1})
                 if book is None or not book.get("books"):
