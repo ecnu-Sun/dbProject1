@@ -8,7 +8,7 @@ mongo_db = mongo_client['bookstore']
 # 定义 SQLite 和 MongoDB 数据库路径和集合名
 databases = [
     {
-        "sqlite_path": r'C:\Users\17314\Desktop\数据库project1\dbProject1\project1\bookstore\fe\data\book.db',
+        "sqlite_path": r'C:\Users\sun_e\Desktop\git_project\dbProject1\project1\bookstore\fe\data\book.db',
         "mongo_collection": mongo_db['books']
     }
     # {

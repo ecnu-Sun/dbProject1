@@ -32,6 +32,20 @@ class Seller(db_conn.DBConn):
                 }}},
                 upsert=True  # 如果不存在则创建新文档
             )
+
+            # 插入书籍到 book 集合
+            self.conn['book'].update_one(
+                {'book_id': book_id},
+                {'$set': {
+                    'book_id': book_id,
+                    'title': book_info.get('title', ''),
+                    'tags': book_info.get('tags', []),
+                    'catalog': book_info.get('catalog', ''),
+                    'content': book_info.get('content', ''),
+                    'book_info': book_info
+                }},
+                upsert=True
+            )
         except PyMongoError as e:
             logging.error(f"Database error in add_book: {e}", exc_info=True)
             return 528, f"{str(e)}"
