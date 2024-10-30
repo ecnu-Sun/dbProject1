@@ -20,7 +20,6 @@ class Buyer:
         for id_count_pair in book_id_and_count:
             books.append({"id": id_count_pair[0], "count": id_count_pair[1]})
         json = {"user_id": self.user_id, "store_id": store_id, "books": books}
-        # print(simplejson.dumps(json))
         url = urljoin(self.url_prefix, "new_order")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
@@ -48,3 +47,31 @@ class Buyer:
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
+
+    # 新增：查询订单历史
+    def order_history(self):
+        url = urljoin(self.url_prefix, "order_history")
+        headers = {"token": self.token}
+        params = {"user_id": self.user_id}
+        r = requests.get(url, headers=headers, params=params)
+        
+        # 检查请求是否成功
+        if r.status_code == 200:
+            response_json = r.json()
+            return r.status_code, response_json.get("message"), response_json.get("orders")
+        else:
+            # 返回错误信息
+            return r.status_code, r.text, None
+
+
+    # 新增：取消订单
+    def cancel_order(self, order_id: str):
+        json = {
+            "user_id": self.user_id,
+            "order_id": order_id,
+        }
+        url = urljoin(self.url_prefix, "cancel_order")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        response_json = r.json()
+        return r.status_code, response_json.get("message")

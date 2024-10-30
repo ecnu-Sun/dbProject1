@@ -20,7 +20,7 @@ class GenBook:
         self.buy_book_id_list = []
 
     def gen(
-        self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 100
+        self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 5
     ) -> (bool, []):
         self.__init_book_list__()
         ok = True

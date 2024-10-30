@@ -1,5 +1,6 @@
 import uuid
 import logging
+from datetime import datetime, timezone
 from be.model import db_conn
 from be.model import error
 from pymongo.errors import PyMongoError
@@ -24,7 +25,6 @@ class Buyer(db_conn.DBConn):
             uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
             items = []  # 存储订单详情
             total_price = 0
-
 
             # 对每本书判定该书店是否有这本书，并获取库存、价格
             for book_id, count in id_and_count:
@@ -57,13 +57,14 @@ class Buyer(db_conn.DBConn):
                 items.append({"book_id": book_id, "count": count, "price": price})
                 total_price += price * count
 
-            # 插入新订单到 new_order 集合
+            # 插入新订单到 new_order 集合，设置初始状态为 `pending`
             order = {
                 "order_id": uid,
                 "user_id": user_id,
                 "store_id": store_id,
                 "items": items,
-                "total_price": total_price
+                "total_price": total_price,
+                "status": "pending",  # 订单状态为 `pending`
             }
             self.conn["new_order"].insert_one(order)
             order_id = uid
@@ -132,8 +133,11 @@ class Buyer(db_conn.DBConn):
                 {"$inc": {"balance": total_price}}
             )
 
-            # 删除已付款订单
-            self.conn["new_order"].delete_one({"order_id": order_id})
+            # 更新订单状态为 `completed`
+            self.conn["new_order"].update_one(
+                {"order_id": order_id},
+                {"$set": {"status": "completed"}}
+            )
         except PyMongoError as e:
             logging.error(f"Database error: {e}")
             return 528, f"{str(e)}"
@@ -167,6 +171,57 @@ class Buyer(db_conn.DBConn):
             return 528, f"{str(e)}"
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
+            return 530, f"{str(e)}"
+
+        return 200, "ok"
+
+    # 查询用户的所有历史订单
+    def get_user_orders(self, user_id: str):
+        try:
+            # 检查用户是否存在
+            if not self.user_id_exist(user_id):
+                return error.error_non_exist_user_id(user_id) + ([],)
+        
+            orders = self.conn["new_order"].find({"user_id": user_id}).sort("created_at", -1)
+            
+            # Convert each order's _id field to a string
+            orders_list = []
+            for order in orders:
+                order["_id"] = str(order["_id"])  # Convert ObjectId to string
+                orders_list.append(order)
+            
+            return 200, "ok", orders_list
+        except PyMongoError as e:
+            logging.error(f"Database error in get_user_orders: {e}")
+            return 528, f"{str(e)}", []
+
+
+    # 取消订单
+    def cancel_order(self, user_id: str, order_id: str):
+        try:
+            # 查询订单信息
+            order = self.conn["new_order"].find_one({"order_id": order_id, "user_id": user_id})
+            if order is None:
+                return error.error_invalid_order_id(order_id)
+
+            # 检查订单状态
+            if order["status"] != "pending":
+                return 400, "Order cannot be cancelled"
+
+            # 更新订单状态为 `cancelled`
+            self.conn["new_order"].update_one({"order_id": order_id}, {"$set": {"status": "cancelled"}})
+            
+            # 恢复库存
+            for item in order["items"]:
+                self.conn["store"].update_one(
+                    {"store_id": order["store_id"], "books.book_id": item["book_id"]},
+                    {"$inc": {"books.$.stock_level": item["count"]}}
+                )
+        except PyMongoError as e:
+            logging.error(f"Database error in cancel_order: {e}")
+            return 528, f"{str(e)}"
+        except Exception as e:
+            logging.error(f"Unexpected error in cancel_order: {e}")
             return 530, f"{str(e)}"
 
         return 200, "ok"
