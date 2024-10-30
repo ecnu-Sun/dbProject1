@@ -184,10 +184,10 @@ class Buyer(db_conn.DBConn):
         
             orders = self.conn["new_order"].find({"user_id": user_id}).sort("created_at", -1)
             
-            # Convert each order's _id field to a string
+            
             orders_list = []
             for order in orders:
-                order["_id"] = str(order["_id"])  # Convert ObjectId to string
+                order["_id"] = str(order["_id"])  
                 orders_list.append(order)
             
             return 200, "ok", orders_list
