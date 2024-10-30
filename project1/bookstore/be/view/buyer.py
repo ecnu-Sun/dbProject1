@@ -3,6 +3,7 @@ from flask import request
 from flask import jsonify
 from be.model.buyer import Buyer
 
+
 bp_buyer = Blueprint("buyer", __name__, url_prefix="/buyer")
 
 
@@ -58,4 +59,12 @@ def cancel_order():
     order_id = request.json.get("order_id")
     b = Buyer()
     code, message = b.cancel_order(user_id, order_id)
+    return jsonify({"message": message}), code
+# 新增接口: 收货
+@bp_buyer.route("/receive_order", methods=["POST"])
+def receive_order():
+    user_id: str = request.json.get("user_id")
+    order_id: str = request.json.get("order_id")
+    b = Buyer()
+    code, message = b.receive_order(user_id, order_id)
     return jsonify({"message": message}), code

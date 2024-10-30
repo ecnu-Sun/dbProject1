@@ -225,3 +225,29 @@ class Buyer(db_conn.DBConn):
             return 530, f"{str(e)}"
 
         return 200, "ok"
+
+    # 收货
+    def receive_order(self, user_id: str, order_id: str) -> (int, str):
+        try:
+            # 查找订单
+            order = self.conn["new_order"].find_one({"order_id": order_id, "user_id": user_id})
+            if order is None:
+                return error.error_invalid_order_id(order_id)
+            
+            # 检查订单状态是否为待收货
+            if order.get("status") != "shipped":
+                return 400, "Order not in a receivable state"
+
+            # 更新订单状态为已收货
+            self.conn["new_order"].update_one(
+                {"order_id": order_id},
+                {"$set": {"status": "received"}}
+            )
+        except PyMongoError as e:
+            logging.error(f"Database error: {e}")
+            return 528, f"{str(e)}"
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            return 530, f"{str(e)}"
+
+        return 200, "Order received successfully"
