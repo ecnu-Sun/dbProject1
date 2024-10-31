@@ -22,7 +22,7 @@ class TestCancelOrder:
         assert code == 200
 
         # 成功取消订单
-        code, message = self.buyer.cancel_order(order_id)
+        code, message = self.buyer.cancel_sorder(order_id)
         assert code == 200
         assert message == "ok"
 
